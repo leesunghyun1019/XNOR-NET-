@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+#BinActive
 class BinActive(torch.autograd.Function):
   @staticmethod
   def forward(ctx,input):
@@ -20,6 +21,7 @@ class BinActive(torch.autograd.Function):
 
 binactive=BinActive.apply
 
+#BinConv2d
 class BinConv2d(nn.Module):
   def __init__(self,input_channels,output_channels,kernel_size=-1,stride=1,padding=0,
                groups=1,bias=False,dilation=1,output_height=0,output_width=0):
@@ -31,6 +33,7 @@ class BinConv2d(nn.Module):
     self.alpha = nn.Parameter(torch.ones(output_height).reshape(1,-1,1))
     self.beta = nn.Parameter(torch.ones(output_width).reshape(1,1,-1))
     self.gamma = nn.Parameter(torch.ones(output_channels).reshape(-1,1,1))
+    # self.alpha=nn.Parameter(torch.ones(output_height).reshape(1,-1,1))
 
   def forward(self,x):
     x = binactive(x)
@@ -44,27 +47,30 @@ class BinConv2d(nn.Module):
 
     x = F.conv2d(x, binary_weights, stride=self.stride, padding=self.padding)
     return x.mul(self.gamma).mul(self.beta).mul(self.alpha)
-
-
+    # return x.mul(self.alpha)
+  
+#conv3x3
 def conv3x3(in_planes,out_planes,stride=1,groups=1,dilation=1,binarize=False,
             output_height=0,output_width=0): #kernel_size is 3x3
-    
-    if binarize:
-        return BinConv2d(in_planes,out_planes,kernel_size=3,stride=stride,
+  "3x3 convolution with padding"
+  if binarize:
+    return BinConv2d(in_planes,out_planes,kernel_size=3,stride=stride,
                      padding=dilation,groups=groups,bias=False,dilation=dilation,output_height=output_height,
                      output_width=output_width)
-    else:
-        return nn.Conv2d(in_planes,out_planes,kernel_size=3,stride=stride,padding=dilation,groups=groups,
+  else:
+    return nn.Conv2d(in_planes,out_planes,kernel_size=3,stride=stride,padding=dilation,groups=groups,
                      bias=False,dilation=dilation)
   
+#conv1x1
 def conv1x1(in_planes,out_planes,stride=1,binarize=False,
             output_height=0,output_width=0):#kernel_size is 1x1
-    if binarize:
-        return BinConv2d(in_planes,out_planes,kernel_size=1,stride=stride,bias=False,
+  if binarize:
+    return BinConv2d(in_planes,out_planes,kernel_size=1,stride=stride,bias=False,
                      output_height=0,output_width=0)
-    else:
-        return nn.Conv2d(in_planes,out_planes,kernel_size=1,stride=stride,bias=False)
-
+  else:
+    return nn.Conv2d(in_planes,out_planes,kernel_size=1,stride=stride,bias=False)
+  
+#Basic Block
 class BasicBlock(nn.Module):
   expansion=1
 
@@ -93,8 +99,8 @@ class BasicBlock(nn.Module):
     identity=x
     out=self.bn1(x)
     if self.downsample is not None:
-      identity=self.downsample(out) #downsample 여부
-    out=self.conv1(out)
+      identity=self.downsample(out) #downsample 여부 
+    out = self.conv1(out)
     out = self.relu(out)
     out = self.bn2(out)
     out = self.conv2(out)
@@ -103,7 +109,6 @@ class BasicBlock(nn.Module):
     out = self.relu(out)
     return out
   
-
 class ResNet(nn.Module):
   def __init__(self,block,layers,num_classes=1000,zero_init_residual=False,
                groups=1,width_per_group=64,replace_stride_with_dilation=None,
@@ -112,7 +117,7 @@ class ResNet(nn.Module):
     if norm_layer is None:
       norm_layer=nn.BatchNorm2d
     self._norm_layer=norm_layer
-
+    
     self.inplanes=64 #집중
     self.dilation=1
 
@@ -130,14 +135,14 @@ class ResNet(nn.Module):
     self.bn1=norm_layer(self.inplanes)
     self.relu=nn.ReLU(inplace=True)
     self.maxpool=nn.MaxPool2d(kernel_size=3,stride=2,padding=1)
-
+    #output_height,width=224라 한다면 layer1는 56
     self.layer1 = self._make_layer(block, 64, layers[0], output_height = output_height//4,
                                         output_width = output_width//4, binarize = binarize) #planes는 출력채널의 수를 정한다
-
+    #layer2는 28
     self.layer2 = self._make_layer(block, 128, layers[1], stride=2,
                                        dilate=replace_stride_with_dilation[0], output_height = output_height//8,
                                         output_width = output_width//8, binarize = binarize)
-
+    #layer3는 
     self.layer3 = self._make_layer(block, 256, layers[2], stride=2,
                                        dilate=replace_stride_with_dilation[1], output_height = output_height//16,
                                         output_width = output_width//16, binarize = binarize)
@@ -174,9 +179,9 @@ class ResNet(nn.Module):
     if dilate: # 팽창률을 통해 필터의 간격을 조정하며, 필터가 더 큰 영역을 커버, 해상도 유지
       self.dilation *=stride
       stride=1
-
+    #self.inplanes != planes* block.expansion는 이전 출력의 채널 수가 현재 입력 채널의 수와 같지 않다는 의미!!
     if stride !=1 or self.inplanes != planes* block.expansion: #planes* block.expansion는 해당 블록의 최종 출력 채널의 수를 결정한다
-      #downsample이란 무엇인가?  이전 출력의 채널 수가 현재 입력 채널의 수와 같지 않다면!!
+      #downsample이란 무엇인가?  downsample은 BasicBlock에서의 identity와 out의 size를 동일하게 만들기 위해서 한다.!!!
       downsample=nn.Sequential(
           nn.AvgPool2d(kernel_size=2,stride=stride),
           conv1x1(self.inplanes,planes*block.expansion,1,output_height=output_height,
@@ -186,15 +191,15 @@ class ResNet(nn.Module):
 
     layers=[]
     #첫번째 블록에서만 다운샘플링이 필요할 수 있다.
-    layers.append(block(self.inplanes, planes, stride, downsample, self.groups, self.base_width,
+    layers.append(block(self.inplanes, planes, stride, downsample, self.groups, self.base_width, 
                         previous_dilation, norm_layer, output_height=output_height, output_width=output_width, binarize=binarize))
 
     self.inplanes = planes * block.expansion #최종 출력 채널의 수가 다음 블록의 입력 채널 수가 된다
     #first layers에서는 planes 64 였고 block.expansion은 1이므로 self.inplanes=64
 
     for _ in range(1, blocks): #두번째 블록부터는 다운샘플링이 필요없다
-        layers.append(block(self.inplanes, planes, groups=self.groups, base_width=self.base_width,
-                            dilation=self.dilation, norm_layer=norm_layer, output_height=output_height,
+        layers.append(block(self.inplanes, planes, groups=self.groups, base_width=self.base_width, 
+                            dilation=self.dilation, norm_layer=norm_layer, output_height=output_height, 
                             output_width=output_width, binarize=binarize))
 
 
@@ -220,9 +225,13 @@ class ResNet(nn.Module):
 
   def forward(self, x):
     return self._forward_impl(x)
-
-
+  
 def _resnet(arch, block, layers, pretrained, progress, **kwargs):
+    model = ResNet(block, layers, **kwargs)
+    return model
+
+def resnet18_preact_bin(progress=True, **kwargs):
+    return _resnet('resnet18', BasicBlock, [2, 2, 2, 2], pretrained=False, progress=progress, **kwargs)
     model = ResNet(block, layers, **kwargs)
     return model
 
