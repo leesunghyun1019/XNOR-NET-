@@ -50,6 +50,12 @@ basicblock에서 out += identity할 때 identity와 out의 size을 동일하게 
 
 
 out의 size는 (80,128,28,28)이므로 out += identity이 안된다. 그걸 막기 위해서 downsample을 통해 
+
+
 if self.downsample is not None:
+      
+      
       identity=self.downsample(out) #downsample 여부
+
+
 identity와 out의 size를 동일하게 한다.
