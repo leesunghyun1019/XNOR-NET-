@@ -59,3 +59,8 @@ if self.downsample is not None:
 
 
 identity와 out의 size를 동일하게 한다.
+
+*Reference
+
+
+https://github.com/legolas123/cv-tricks.com/tree/master/xnornet_plusplus 
