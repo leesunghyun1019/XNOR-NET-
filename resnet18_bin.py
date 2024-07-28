@@ -142,11 +142,11 @@ class ResNet(nn.Module):
     self.layer2 = self._make_layer(block, 128, layers[1], stride=2,
                                        dilate=replace_stride_with_dilation[0], output_height = output_height//8,
                                         output_width = output_width//8, binarize = binarize)
-    #layer3는 
+    #layer3는 14
     self.layer3 = self._make_layer(block, 256, layers[2], stride=2,
                                        dilate=replace_stride_with_dilation[1], output_height = output_height//16,
                                         output_width = output_width//16, binarize = binarize)
-
+    #layer4는 7
     self.layer4 = self._make_layer(block, 512, layers[3], stride=2,
                                        dilate=replace_stride_with_dilation[2], output_height = output_height//32,
                                         output_width = output_width//32, binarize = binarize)
