@@ -178,10 +178,14 @@ class XNOR_ResNet(nn.Module):
       #     conv1x1(self.inplanes,planes*block.expansion,1),
       #             norm_layer(planes*block.expansion),
       # )
+      # downsample = nn.Sequential(
+      #           nn.Conv2d(self.inplanes, planes * block.expansion, kernel_size=1, stride=stride, bias=False),
+      #           norm_layer(planes * block.expansion),
+      #       )
       downsample = nn.Sequential(
-                nn.Conv2d(self.inplanes, planes * block.expansion, kernel_size=1, stride=stride, bias=False),
-                norm_layer(planes * block.expansion),
-            )
+          nn.AvgPool2d(kernel_size=2, stride=stride),
+          conv1x1(self.inplanes, planes * block.expansion),
+          norm_layer(planes * block.expansion),)
 
     layers=[]
     #첫번째 블록에서만 다운샘플링이 필요할 수 있다.
