@@ -188,6 +188,10 @@ class ResNet(nn.Module):
                   output_width=output_width,binarize=False),
                   norm_layer(planes*block.expansion),
       )
+      #downsample=nn.Sequential(
+      #     conv1x1(self.inplanes,planes*block.expansion,stride,binarize=False),
+      #             norm_layer(planes*block.expansion),
+      # )
 
     layers=[]
     #첫번째 블록에서만 다운샘플링이 필요할 수 있다.
