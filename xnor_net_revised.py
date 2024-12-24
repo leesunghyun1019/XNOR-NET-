@@ -37,7 +37,7 @@ class BinConv2d(nn.Module):
   
   def forward(self,x):
     #Binarize input
-    x=binactive(x) #x의 size가 (64,64,56,56)
+    b_x=binactive(x) #x의 size가 (64,64,56,56)
     
     #scaling factor K
     A = BinActiv.Mean(x)  
@@ -58,7 +58,7 @@ class BinConv2d(nn.Module):
     binary_weights = signed_weights
 
     binary_weights=binary_weights.mul(alpha)
-    x = F.conv2d(x, binary_weights, stride=self.stride, padding=self.padding) #x의 크기는 (64,128,28,28)
+    x = F.conv2d(b_x, binary_weights, stride=self.stride, padding=self.padding) #x의 크기는 (64,128,28,28)
     return x.mul(K)
 
 
