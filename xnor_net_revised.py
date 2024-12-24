@@ -58,8 +58,8 @@ class BinConv2d(nn.Module):
     binary_weights = signed_weights
 
     binary_weights=binary_weights.mul(alpha)
-    x = F.conv2d(b_x, binary_weights, stride=self.stride, padding=self.padding) #x의 크기는 (64,128,28,28)
-    return x.mul(K)
+    output = F.conv2d(b_x, binary_weights, stride=self.stride, padding=self.padding) #x의 크기는 (64,128,28,28)
+    return output.mul(K)
 
 
 def conv3x3(in_planes,out_planes,stride=1,groups=1,dilation=1,binarize=False): #kernel_size is 3x3
